@@ -8,9 +8,8 @@ module.exports = ({content}) => {
                <title>E-commerce</title> 
             </head>
             <body>
-            
+                ${content}
             </body>
         </html>
-        
     `
 };
