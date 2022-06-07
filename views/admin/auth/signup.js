@@ -1,15 +1,27 @@
 const layout = require('../layout');
 
+const getError = (errors, property) => {
+    try {
+        return errors.mapped()[property].msg
+    }catch (err){
+        return '';
+    }
+};
+
 //language=HTML
-module.exports = ({req}) => {
+module.exports = ({req, errors}) => {
     return layout({
         content: `
             <div>
                 Your ID is: ${req.session.userId}
                 <form method="POST">
                     <input name="email" placeholder="email"/>
+                    ${getError(errors,'email')}
                     <input name="password" placeholder="password"/>
+                    ${getError(errors,'password')}
                     <input name="passwordConfirmation" placeholder="password confirmation"/>
+                    ${getError(errors,'passwordConfirmation')}
+
                     <button>Sign up</button>
                 </form>
             </div>
