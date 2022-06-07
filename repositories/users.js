@@ -1,55 +1,63 @@
 const fs = require('fs');
 const crypto = require('crypto');
 const util = require('util');
+
 const scrypt = util.promisify(crypto.scrypt);
 
 class UsersRepository {
-
-    constructor(fileName) {
-        if (!fileName) {
+    constructor(filename) {
+        if (!filename) {
             throw new Error('Creating a repository requires a filename');
         }
 
-        this.fileName = fileName;
+        this.filename = filename;
         try {
-            fs.accessSync(this.fileName);
+            fs.accessSync(this.filename);
         } catch (err) {
-            fs.writeFileSync(this.fileName, '[]');
+            fs.writeFileSync(this.filename, '[]');
         }
     }
 
     async getAll() {
-
-        return JSON.parse(await fs.promises.readFile(this.fileName, {encoding: 'utf-8'}));
-
+        return JSON.parse(
+            await fs.promises.readFile(this.filename, {
+                encoding: 'utf8'
+            })
+        );
     }
 
-    async create(attributes) {
-        attributes.id = this.randomId();
+    async create(attrs) {
+        attrs.id = this.randomId();
+
         const salt = crypto.randomBytes(8).toString('hex');
-        const hashed = await scrypt(attributes.password, salt, 64);
+        const buf = await scrypt(attrs.password, salt, 64);
 
         const records = await this.getAll();
         const record = {
-            ...attributes,
-            password: `${hashed.toString('hex')}.${salt}`
+            ...attrs,
+            password: `${buf.toString('hex')}.${salt}`
         };
         records.push(record);
+
         await this.writeAll(records);
+
         return record;
     }
 
-    async comparePasswords(saved,supplied) {
-        const [hashed,salt] = saved.split('.');
-        const hashedSuppliedBuffer = await scrypt(supplied,salt,64);
+    async comparePasswords(saved, supplied) {
+        // Saved -> password saved in our database. 'hashed.salt'
+        // Supplied -> password given to us by a user trying sign in
+        const [hashed, salt] = saved.split('.');
+        const hashedSuppliedBuf = await scrypt(supplied, salt, 64);
 
-        return hashed===hashedSuppliedBuffer.toString('hex');
-
+        return hashed === hashedSuppliedBuf.toString('hex');
     }
 
     async writeAll(records) {
-        await fs.promises.writeFile(this.fileName, JSON.stringify(records, null, 2));
-
+        await fs.promises.writeFile(
+            this.filename,
+            JSON.stringify(records, null, 2)
+        );
     }
 
     randomId() {
@@ -81,13 +89,16 @@ class UsersRepository {
 
     async getOneBy(filters) {
         const records = await this.getAll();
+
         for (let record of records) {
             let found = true;
+
             for (let key in filters) {
                 if (record[key] !== filters[key]) {
                     found = false;
                 }
             }
+
             if (found) {
                 return record;
             }
