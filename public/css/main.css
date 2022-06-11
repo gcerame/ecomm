@@ -50,7 +50,7 @@ body {
 .navbar-bottom .container.navbar-container {
   display: flex;
   justify-content: space-between;
-  padding: 0px 5%;
+  padding: 0 5%;
   align-items: center;
 }
 
